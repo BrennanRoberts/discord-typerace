@@ -1,5 +1,10 @@
 import { BaseCommandInteraction, Message } from "discord.js";
 import Race from "./Race";
+const quotes = require("./data/quotes.json");
+
+interface Quote {
+  content: string;
+}
 
 class RaceTracker {
   currentRace: Race | null;
@@ -10,8 +15,9 @@ class RaceTracker {
 
   async startRace(interaction: BaseCommandInteraction) {
     console.log("Starting race");
+    const quote: Quote = quotes[Math.floor(Math.random() * quotes.length)];
     const race = new Race({
-      string: "Foo",
+      string: quote.content,
       interaction: interaction,
     });
     await interaction.reply({ content: "Starting race", ephemeral: true });

@@ -50,7 +50,7 @@ export default class Race {
   }
 
   async sendStartMessage(participant: User) {
-    participant.send(`Type "${this.string}"`);
+    participant.send("Go! \n```" + this.string + "```");
   }
 
   isOver(): boolean {
