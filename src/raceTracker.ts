@@ -1,4 +1,9 @@
-import { BaseCommandInteraction, Message } from "discord.js";
+import {
+  BaseCommandInteraction,
+  Message,
+  ButtonInteraction,
+  MessageComponentInteraction,
+} from "discord.js";
 import Race from "./Race";
 const quotes = require("./data/quotes.json");
 
@@ -13,16 +18,25 @@ class RaceTracker {
     this.currentRace = null;
   }
 
-  async startRace(interaction: BaseCommandInteraction) {
-    console.log("Starting race");
+  async createRace(interaction: BaseCommandInteraction) {
+    if (this.currentRace) {
+      await interaction.reply({
+        content: "A race is already active",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    console.log("Creating a race");
     const quote: Quote = quotes[Math.floor(Math.random() * quotes.length)];
     const race = new Race({
       string: quote.content,
       interaction: interaction,
+      onComplete: this.onRaceComplete.bind(this),
     });
-    await interaction.reply({ content: "Starting race", ephemeral: true });
+
+    await race.gatherParticipants();
     this.currentRace = race;
-    race.start();
   }
 
   async consumeMessage(message: Message) {
@@ -32,10 +46,19 @@ class RaceTracker {
     }
 
     await this.currentRace.consumeMessage(message);
-    if (this.currentRace.isOver()) {
-      await this.currentRace.sendCompletionMessage();
-      this.currentRace = null;
+  }
+
+  onRaceComplete() {
+    this.currentRace = null;
+  }
+
+  async consumeButtonInteraction(interaction: ButtonInteraction) {
+    console.log(interaction.customId);
+    if (!this.currentRace) {
+      return;
     }
+
+    await this.currentRace.consumeButtonInteraction(interaction);
   }
 }
 

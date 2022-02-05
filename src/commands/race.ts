@@ -8,7 +8,7 @@ const PingCommand: Command = {
     .setName("race")
     .setDescription("Start a type race (in dev)"),
   async execute(interaction: BaseCommandInteraction) {
-    await raceTracker.startRace(interaction);
+    await raceTracker.createRace(interaction);
   },
 };
 

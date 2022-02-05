@@ -1,4 +1,10 @@
-import { Client, Intents, Interaction, Message } from "discord.js";
+import {
+  Client,
+  Intents,
+  Interaction,
+  ButtonInteraction,
+  Message,
+} from "discord.js";
 import commands from "./commands/index";
 import raceTracker from "./raceTracker";
 const { token } = require("../config.json");
@@ -12,6 +18,12 @@ client.once("ready", (client) => {
 });
 
 client.on("interactionCreate", async (interaction: Interaction) => {
+  if (interaction.isButton()) {
+    return await raceTracker.consumeButtonInteraction(
+      <ButtonInteraction>interaction
+    );
+  }
+
   if (!interaction.isCommand()) return;
 
   const command = commands.get(interaction.commandName);
