@@ -1,9 +1,11 @@
-import fs from "fs";
-import { Client, Intents, Interaction } from "discord.js";
+import { Client, Intents, Interaction, Message } from "discord.js";
 import commands from "./commands/index";
+import raceTracker from "./raceTracker";
 const { token } = require("../config.json");
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const client = new Client({
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES],
+});
 
 client.once("ready", (client) => {
   console.log(`Ready! Logged in as ${client.user.tag}`);
@@ -25,6 +27,12 @@ client.on("interactionCreate", async (interaction: Interaction) => {
       ephemeral: true,
     });
   }
+});
+
+client.on("message", async (message: Message) => {
+  if (message.author.bot) return;
+
+  raceTracker.consumeMessage(message);
 });
 
 client.login(token);
