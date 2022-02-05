@@ -11,6 +11,9 @@ const quotes = require("./data/quotes.json");
 const DEBUG_WAIT_TIME = 5000;
 const WAIT_TIME = 20000;
 
+const DEBUG_AUTOCOMPLETE_TIME = 5000;
+const AUTOCOMPLETE_TIME = 30000;
+
 enum RaceState {
   Initialized,
   Waiting,
@@ -45,6 +48,7 @@ export default class Race {
   completionTimes: CompletionTimes;
   onComplete: onCompleteCallback;
   debugMode: boolean;
+  autocompleteTimeout: ReturnType<typeof setTimeout> | null;
 
   constructor(options: ConstructorOptions) {
     this.state = RaceState.Initialized;
@@ -55,6 +59,7 @@ export default class Race {
     this.participants = [];
     this.startTime = null;
     this.completionTimes = {};
+    this.autocompleteTimeout = null;
   }
 
   selectQuote() {
@@ -94,6 +99,11 @@ export default class Race {
     }
 
     this.startTime = new Date();
+    this.autocompleteTimeout = setTimeout(
+      this.autocomplete.bind(this),
+      this.debugMode ? DEBUG_AUTOCOMPLETE_TIME : AUTOCOMPLETE_TIME
+    );
+
     await Promise.all(this.participants.map((p) => this.sendStartMessage(p)));
     await this.interaction.followUp({
       content: "Race started",
@@ -152,10 +162,21 @@ export default class Race {
 
   async checkCompletion() {
     if (Object.keys(this.completionTimes).length >= this.participants.length) {
-      await this.sendCompletionMessage();
-      this.state = RaceState.Complete;
-      this.onComplete();
+      this.complete();
     }
+  }
+
+  async autocomplete() {
+    this.complete();
+  }
+
+  async complete() {
+    if (this.autocompleteTimeout) {
+      clearTimeout(this.autocompleteTimeout);
+    }
+    await this.sendCompletionMessage();
+    this.state = RaceState.Complete;
+    this.onComplete();
   }
 
   async sendCompletionMessage() {
