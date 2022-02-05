@@ -42,7 +42,6 @@ class RaceTracker {
   }
 
   async consumeButtonInteraction(interaction: ButtonInteraction) {
-    console.log(interaction.customId);
     if (!this.currentRace) {
       return;
     }

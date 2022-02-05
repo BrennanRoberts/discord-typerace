@@ -15,11 +15,11 @@ const DEBUG_AUTOCOMPLETE_TIME = 5000;
 const AUTOCOMPLETE_TIME = 30000;
 
 enum RaceState {
-  Initialized,
-  Waiting,
-  InProgress,
-  Complete,
-  AbortedNoParticipants,
+  Initialized = "initialized",
+  Waiting = "waiting",
+  InProgress = "inprogress",
+  Complete = "complete",
+  AbortedNoParticipants = "abortednoparticipants",
 }
 
 interface onCompleteCallback {
@@ -83,12 +83,16 @@ export default class Race {
   }
 
   render() {
+    console.log("rendering " + this.state);
     switch (this.state) {
       case RaceState.Waiting:
         this.interaction.editReply(this.renderWaiting());
         break;
       case RaceState.InProgress:
-        this.renderInProgress();
+        this.interaction.editReply(this.renderInProgress());
+        break;
+      case RaceState.Complete:
+        this.interaction.editReply(this.renderComplete());
         break;
       case RaceState.AbortedNoParticipants:
         this.interaction.editReply(this.renderAbortedNoParticipants());
@@ -108,7 +112,7 @@ export default class Race {
       this.waitingEndTime
         ? Math.ceil((this.waitingEndTime - Date.now()) / 1000)
         : 0
-    } seconds`;
+    } seconds...`;
 
     return {
       content: countdown + "\n" + this.renderParticipantList(),
@@ -117,12 +121,30 @@ export default class Race {
     };
   }
 
-  renderInProgress() {}
+  renderInProgress() {
+    return {
+      content: "Race in progress\n" + this.renderParticipantList(),
+      components: [],
+      ephemeral: this.debugMode,
+    };
+  }
+
+  renderComplete() {
+    return {
+      content: "Race complete\n" + this.renderParticipantList(),
+      components: [],
+      ephemeral: this.debugMode,
+    };
+  }
 
   renderParticipantList() {
     return this.participants
       .map((participant) => {
-        return `🏎  ${participant.username}`;
+        const completionTime = this.completionTimes[participant.id];
+        const completeMark = completionTime
+          ? ` ✅ (${completionTime / 1000})`
+          : "";
+        return `🏎  ${participant.username}${completeMark}`;
       })
       .join("\n");
   }
@@ -130,6 +152,7 @@ export default class Race {
   renderAbortedNoParticipants() {
     return {
       content: "Race aborted, no participants",
+      components: [],
       ephemeral: this.debugMode,
     };
   }
@@ -137,7 +160,6 @@ export default class Race {
   async start() {
     if (this.participants.length === 0) {
       this.state = RaceState.AbortedNoParticipants;
-      await this.interaction.editReply(this.renderAbortedNoParticipants());
       this.cleanup();
       this.onComplete();
       return;
@@ -150,10 +172,6 @@ export default class Race {
     );
 
     await Promise.all(this.participants.map((p) => this.sendStartMessage(p)));
-    await this.interaction.followUp({
-      content: "Race started",
-      ephemeral: this.debugMode,
-    });
     this.state = RaceState.InProgress;
   }
 
@@ -174,11 +192,6 @@ export default class Race {
 
     await message.author.send("Completed");
     this.markParticipantAsComplete(message.author);
-
-    await this.interaction.followUp({
-      content: "Participant finished",
-      ephemeral: this.debugMode,
-    });
 
     await this.checkCompletion();
   }
@@ -218,27 +231,13 @@ export default class Race {
     if (this.autocompleteTimeout) {
       clearTimeout(this.autocompleteTimeout);
     }
-    await this.sendCompletionMessage();
     this.state = RaceState.Complete;
     this.onComplete();
     this.cleanup();
   }
 
-  async sendCompletionMessage() {
-    const times = Object.entries(this.completionTimes)
-      .map(([userId, time]) => {
-        const participant = this.participants.find((p) => p.id === userId);
-        return `${participant?.username}: ${time / 1000} seconds`;
-      })
-      .join("\n");
-
-    this.interaction.followUp({
-      content: "Race complete\n" + times,
-      ephemeral: this.debugMode,
-    });
-  }
-
   cleanup() {
+    this.render();
     if (this.renderInterval) {
       clearTimeout(this.renderInterval);
     }
