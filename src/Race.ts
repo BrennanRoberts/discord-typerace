@@ -186,7 +186,7 @@ export default class Race {
     }
 
     if (message.content !== this.string) {
-      await message.author.send("Nope.");
+      await message.author.send("Oops, something wasn't quite right.");
       return;
     }
 
