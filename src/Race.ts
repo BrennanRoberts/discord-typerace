@@ -6,8 +6,9 @@ import {
   MessageActionRow,
   MessageButton,
 } from "discord.js";
+const { debug } = require("../config.json");
 
-const WAIT_TIME = 10000;
+const WAIT_TIME = 20000;
 
 enum RaceState {
   Initialized,
@@ -35,7 +36,7 @@ export default class Race {
   string: string;
   interaction: BaseCommandInteraction;
   participants: User[];
-  startTime: Date;
+  startTime: Date | null;
   completionTimes: CompletionTimes;
   onComplete: onCompleteCallback;
 
@@ -46,7 +47,7 @@ export default class Race {
     this.onComplete = options.onComplete;
     this.participants = [];
     //this.participants = [this.interaction.user];
-    this.startTime = new Date();
+    this.startTime = null;
     this.completionTimes = {};
   }
 
@@ -63,7 +64,7 @@ export default class Race {
     this.interaction.reply({
       content: `Race created, starting in ${WAIT_TIME} seconds`,
       components: [buttonRow],
-      ephemeral: true,
+      ephemeral: debug,
     });
     setTimeout(this.start.bind(this), WAIT_TIME);
   }
@@ -72,7 +73,7 @@ export default class Race {
     if (this.participants.length === 0) {
       await this.interaction.followUp({
         content: "Race aborted, no participants",
-        ephemeral: true,
+        ephemeral: debug,
       });
 
       this.state = RaceState.Complete;
@@ -80,10 +81,11 @@ export default class Race {
       return;
     }
 
+    this.startTime = new Date();
     await Promise.all(this.participants.map((p) => this.sendStartMessage(p)));
     await this.interaction.followUp({
       content: "Race started",
-      ephemeral: true,
+      ephemeral: debug,
     });
     this.state = RaceState.InProgress;
   }
@@ -108,7 +110,7 @@ export default class Race {
 
     await this.interaction.followUp({
       content: "Participant finished",
-      ephemeral: true,
+      ephemeral: debug,
     });
 
     await this.checkCompletion();
@@ -117,6 +119,7 @@ export default class Race {
   async consumeButtonInteraction(interaction: ButtonInteraction) {
     if (interaction.customId === "JOIN_RACE") {
       await this.addParticipant(interaction.user);
+      interaction.reply({ content: "Race joined", ephemeral: true });
     }
   }
 
@@ -128,6 +131,9 @@ export default class Race {
   }
 
   markParticipantAsComplete(participant: User) {
+    if (!this.startTime) {
+      return;
+    }
     const completionTime = new Date().getTime() - this.startTime.getTime();
     this.completionTimes[participant.id] = completionTime;
   }
@@ -141,6 +147,16 @@ export default class Race {
   }
 
   async sendCompletionMessage() {
-    this.interaction.followUp({ content: "Race complete", ephemeral: true });
+    const times = Object.entries(this.completionTimes)
+      .map(([userId, time]) => {
+        const participant = this.participants.find((p) => p.id === userId);
+        return `${participant?.username}: ${time / 1000} seconds`;
+      })
+      .join("\n");
+
+    this.interaction.followUp({
+      content: "Race complete\n" + times,
+      ephemeral: debug,
+    });
   }
 }
