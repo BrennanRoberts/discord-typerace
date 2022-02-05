@@ -3,13 +3,13 @@ import { BaseCommandInteraction } from "discord.js";
 import raceTracker from "../raceTracker";
 import Command from "../types/Command";
 
-const command: Command = {
+const Command: Command = {
   data: new SlashCommandBuilder()
-    .setName("race")
-    .setDescription("Start a type race (in dev)"),
+    .setName("debug-race")
+    .setDescription("[Debug] Start a type race (in dev)"),
   async execute(interaction: BaseCommandInteraction) {
-    await raceTracker.createRace(interaction);
+    await raceTracker.createRace(interaction, true);
   },
 };
 
-export default command;
+export default Command;

@@ -6,8 +6,9 @@ import {
   MessageActionRow,
   MessageButton,
 } from "discord.js";
-const { debug } = require("../config.json");
+const quotes = require("./data/quotes.json");
 
+const DEBUG_WAIT_TIME = 5000;
 const WAIT_TIME = 20000;
 
 enum RaceState {
@@ -22,13 +23,17 @@ interface onCompleteCallback {
 }
 
 interface ConstructorOptions {
-  string: string;
   interaction: BaseCommandInteraction;
   onComplete: onCompleteCallback;
+  debugMode: boolean;
 }
 
 interface CompletionTimes {
   [id: string]: number;
+}
+
+interface Quote {
+  content: string;
 }
 
 export default class Race {
@@ -39,16 +44,22 @@ export default class Race {
   startTime: Date | null;
   completionTimes: CompletionTimes;
   onComplete: onCompleteCallback;
+  debugMode: boolean;
 
   constructor(options: ConstructorOptions) {
     this.state = RaceState.Initialized;
-    this.string = options.string;
     this.interaction = options.interaction;
     this.onComplete = options.onComplete;
+    this.debugMode = options.debugMode || false;
+    this.string = this.debugMode ? "test string" : this.selectQuote();
     this.participants = [];
-    //this.participants = [this.interaction.user];
     this.startTime = null;
     this.completionTimes = {};
+  }
+
+  selectQuote() {
+    const quote: Quote = quotes[Math.floor(Math.random() * quotes.length)];
+    return quote.content;
   }
 
   async gatherParticipants() {
@@ -61,19 +72,20 @@ export default class Race {
         .setStyle("PRIMARY")
     );
 
+    const waitTime = this.debugMode ? DEBUG_WAIT_TIME : WAIT_TIME;
     this.interaction.reply({
-      content: `Race created, starting in ${WAIT_TIME} seconds`,
+      content: `Race created, starting in ${waitTime / 1000} seconds`,
       components: [buttonRow],
-      ephemeral: debug,
+      ephemeral: this.debugMode,
     });
-    setTimeout(this.start.bind(this), WAIT_TIME);
+    setTimeout(this.start.bind(this), waitTime);
   }
 
   async start() {
     if (this.participants.length === 0) {
       await this.interaction.followUp({
         content: "Race aborted, no participants",
-        ephemeral: debug,
+        ephemeral: this.debugMode,
       });
 
       this.state = RaceState.Complete;
@@ -85,7 +97,7 @@ export default class Race {
     await Promise.all(this.participants.map((p) => this.sendStartMessage(p)));
     await this.interaction.followUp({
       content: "Race started",
-      ephemeral: debug,
+      ephemeral: this.debugMode,
     });
     this.state = RaceState.InProgress;
   }
@@ -110,7 +122,7 @@ export default class Race {
 
     await this.interaction.followUp({
       content: "Participant finished",
-      ephemeral: debug,
+      ephemeral: this.debugMode,
     });
 
     await this.checkCompletion();
@@ -156,7 +168,7 @@ export default class Race {
 
     this.interaction.followUp({
       content: "Race complete\n" + times,
-      ephemeral: debug,
+      ephemeral: this.debugMode,
     });
   }
 }

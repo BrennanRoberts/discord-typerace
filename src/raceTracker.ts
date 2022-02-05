@@ -1,15 +1,5 @@
-import {
-  BaseCommandInteraction,
-  Message,
-  ButtonInteraction,
-  MessageComponentInteraction,
-} from "discord.js";
+import { BaseCommandInteraction, Message, ButtonInteraction } from "discord.js";
 import Race from "./Race";
-const quotes = require("./data/quotes.json");
-
-interface Quote {
-  content: string;
-}
 
 class RaceTracker {
   currentRace: Race | null;
@@ -18,7 +8,7 @@ class RaceTracker {
     this.currentRace = null;
   }
 
-  async createRace(interaction: BaseCommandInteraction) {
+  async createRace(interaction: BaseCommandInteraction, debugMode = false) {
     if (this.currentRace) {
       await interaction.reply({
         content: "A race is already active",
@@ -28,11 +18,10 @@ class RaceTracker {
     }
 
     console.log("Creating a race");
-    const quote: Quote = quotes[Math.floor(Math.random() * quotes.length)];
     const race = new Race({
-      string: quote.content,
       interaction: interaction,
       onComplete: this.onRaceComplete.bind(this),
+      debugMode: debugMode,
     });
 
     await race.gatherParticipants();
