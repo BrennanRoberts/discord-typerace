@@ -7,6 +7,7 @@ import {
   MessageButton,
 } from "discord.js";
 const quotes = require("./data/quotes.json");
+import renderParticipantList from "./renderParticipantList";
 
 const DEBUG_WAIT_TIME = 5000;
 const WAIT_TIME = 20000;
@@ -154,15 +155,7 @@ export default class Race {
   }
 
   renderParticipantList() {
-    return this.participants
-      .map((participant) => {
-        const completionTime = this.completionTimes[participant.id];
-        const completeMark = completionTime
-          ? ` ✅ (${completionTime / 1000})`
-          : "";
-        return `🏎  ${participant.username}${completeMark}`;
-      })
-      .join("\n");
+    return renderParticipantList(this.participants, this.completionTimes);
   }
 
   renderAbortedNoParticipants() {
