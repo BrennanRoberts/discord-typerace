@@ -10,6 +10,8 @@ const quotes = require("./data/quotes.json");
 
 const DEBUG_WAIT_TIME = 5000;
 const WAIT_TIME = 20000;
+const STARTING_RACE_COUNTDOWN_TICKS = 5;
+const RACE_COUNTDOWN_INTERVAL = 1000;
 
 const DEBUG_AUTOCOMPLETE_TIME = 5000;
 const AUTOCOMPLETE_TIME = 30000;
@@ -17,6 +19,7 @@ const AUTOCOMPLETE_TIME = 30000;
 enum RaceState {
   Initialized = "initialized",
   Waiting = "waiting",
+  RaceCountdown = "racecountdown",
   InProgress = "inprogress",
   Complete = "complete",
   AbortedNoParticipants = "abortednoparticipants",
@@ -46,6 +49,7 @@ export default class Race {
   interaction: BaseCommandInteraction;
   participants: User[];
   waitingEndTime: number | null;
+  remainingRaceCountdownTicks: number;
   startTime: Date | null;
   completionTimes: CompletionTimes;
   onComplete: onCompleteCallback;
@@ -61,6 +65,7 @@ export default class Race {
     this.string = this.debugMode ? "test string" : this.selectQuote();
     this.participants = [];
     this.waitingEndTime = null;
+    this.remainingRaceCountdownTicks = STARTING_RACE_COUNTDOWN_TICKS;
     this.startTime = null;
     this.completionTimes = {};
     this.autocompleteTimeout = null;
@@ -87,6 +92,9 @@ export default class Race {
     switch (this.state) {
       case RaceState.Waiting:
         this.interaction.editReply(this.renderWaiting());
+        break;
+      case RaceState.RaceCountdown:
+        this.interaction.editReply(this.renderRaceCountdown());
         break;
       case RaceState.InProgress:
         this.interaction.editReply(this.renderInProgress());
@@ -117,6 +125,14 @@ export default class Race {
     return {
       content: countdown + "\n" + this.renderParticipantList(),
       components: [buttonRow],
+      ephemeral: this.debugMode,
+    };
+  }
+
+  renderRaceCountdown() {
+    return {
+      content: `Race is beginning in ${this.remainingRaceCountdownTicks} seconds...`,
+      components: [],
       ephemeral: this.debugMode,
     };
   }
@@ -165,6 +181,29 @@ export default class Race {
       return;
     }
 
+    this.startRaceCountdown();
+  }
+
+  async startRaceCountdown() {
+    await this.tickRaceCountdown();
+    this.state = RaceState.RaceCountdown;
+  }
+
+  async tickRaceCountdown() {
+    await Promise.all(
+      this.participants.map((p) => this.sendCountdownMessage(p))
+    );
+    this.remainingRaceCountdownTicks--;
+    this.setTimeout(this.nextTickAction.bind(this), RACE_COUNTDOWN_INTERVAL);
+  }
+
+  get nextTickAction() {
+    return this.remainingRaceCountdownTicks
+      ? this.tickRaceCountdown
+      : this.startRace;
+  }
+
+  async startRace() {
     this.startTime = new Date();
     this.autocompleteTimeout = setTimeout(
       this.autocomplete.bind(this),
@@ -173,6 +212,10 @@ export default class Race {
 
     await Promise.all(this.participants.map((p) => this.sendStartMessage(p)));
     this.state = RaceState.InProgress;
+  }
+
+  async sendCountdownMessage(participant: User) {
+    participant.send(this.remainingRaceCountdownTicks + "...");
   }
 
   async sendStartMessage(participant: User) {
