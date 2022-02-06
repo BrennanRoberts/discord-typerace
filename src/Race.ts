@@ -6,6 +6,7 @@ import {
   MessageActionRow,
   MessageButton,
 } from "discord.js";
+import { Participant, CompletionTimes } from "./types";
 const quotes = require("./data/quotes.json");
 import renderParticipantList from "./renderParticipantList";
 
@@ -34,10 +35,6 @@ interface ConstructorOptions {
   interaction: BaseCommandInteraction;
   onComplete: onCompleteCallback;
   debugMode: boolean;
-}
-
-interface CompletionTimes {
-  [id: string]: number;
 }
 
 interface Quote {
@@ -155,7 +152,11 @@ export default class Race {
   }
 
   renderParticipantList() {
-    return renderParticipantList(this.participants, this.completionTimes);
+    return renderParticipantList(
+      <Participant[]>this.participants,
+      this.completionTimes,
+      this.state == RaceState.Complete
+    );
   }
 
   renderAbortedNoParticipants() {

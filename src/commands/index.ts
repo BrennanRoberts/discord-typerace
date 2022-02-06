@@ -1,5 +1,5 @@
 import { Collection } from "discord.js";
-import Command from "../types/Command";
+import { Command } from "../types";
 import PingCommand from "./ping";
 import RaceCommand from "./race";
 import DebugRaceCommand from "./debug-race";
