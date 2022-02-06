@@ -145,7 +145,7 @@ export default class Race {
 
   renderComplete() {
     return {
-      content: "Race complete\n" + this.renderParticipantList(),
+      content: "```" + this.string + "```\n" + this.renderParticipantList(),
       components: [],
       ephemeral: this.debugMode,
     };
