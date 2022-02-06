@@ -15,7 +15,7 @@ describe("renderParticipantList", function () {
     test("single entry, complete", () => {
       expect(
         renderParticipantList([{ id: "1", username: "asdf" }], { 1: 1000 })
-      ).toEqual("🏁  asdf (1)");
+      ).toEqual("🏁  asdf");
     });
 
     test("multiple entry, mixed bag", () => {
@@ -27,7 +27,7 @@ describe("renderParticipantList", function () {
           ],
           { 1: 1000 }
         )
-      ).toEqual("🏁  asdf (1)\n🏎  fdsa");
+      ).toEqual("🏁  asdf\n🏎  fdsa");
     });
 
     test("multiple entry, complete", () => {
@@ -39,7 +39,7 @@ describe("renderParticipantList", function () {
           ],
           { 1: 1000, 2: 1200 }
         )
-      ).toEqual("🏁  asdf (1)\n🏁  fdsa (1.2)");
+      ).toEqual("🏁  asdf\n🏁  fdsa");
     });
   });
   describe("complete", function () {
@@ -65,13 +65,14 @@ describe("renderParticipantList", function () {
             no1: 1000,
             no4: 4000,
           },
-          true
+          true,
+          "this string is considered 8 words long"
         )
       ).toEqual(
-        "🥇  no1 (1)\n" +
-          "🥈  no2 (2)\n" +
-          "🥉  no3 (3)\n" +
-          "🏎  no4 (4)\n" +
+        "🥇  no1 - 1 seconds (480 WPM)\n" +
+          "🥈  no2 - 2 seconds (240 WPM)\n" +
+          "🥉  no3 - 3 seconds (160 WPM)\n" +
+          "🏎  no4 - 4 seconds (120 WPM)\n" +
           "❌  no5"
       );
     });

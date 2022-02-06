@@ -155,7 +155,8 @@ export default class Race {
     return renderParticipantList(
       <Participant[]>this.participants,
       this.completionTimes,
-      this.state == RaceState.Complete
+      this.state == RaceState.Complete,
+      this.string
     );
   }
 

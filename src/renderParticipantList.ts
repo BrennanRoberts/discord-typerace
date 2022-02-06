@@ -6,14 +6,21 @@ function renderParticipantRow(
   participant: Participant,
   completionTimes: CompletionTimes,
   isComplete: boolean,
+  wordCount: number,
   index: number
 ) {
   const completionTime = completionTimes[participant.id];
   const hasFinished = Boolean(completionTime);
   const icon = getIcon(isComplete, hasFinished, index);
-  const time = hasFinished ? ` (${completionTime / 1000})` : "";
 
-  return `${icon}  ${participant.username}${time}`;
+  const completionInfo = function () {
+    if (!isComplete || !hasFinished) return "";
+    const time = completionTime / 1000;
+    const wpm = Math.round(wordCount / (time / 60));
+    return ` - ${time} seconds (${wpm} WPM)`;
+  };
+
+  return `${icon}  ${participant.username}${completionInfo()}`;
 }
 
 function getIcon(isComplete: boolean, hasFinished: boolean, placement: number) {
@@ -55,13 +62,18 @@ function sortParticipantsByCompletionTime(
 export default function renderParticipantList(
   participants: Participant[],
   completionTimes: CompletionTimes,
-  isComplete: boolean = false
+  isComplete: boolean = false,
+  string: string = ""
 ) {
+  const wordCount = Math.round(string.length / 5);
+
   const sortedParticipants = isComplete
     ? sortParticipantsByCompletionTime(participants, completionTimes)
     : participants;
 
   return sortedParticipants
-    .map((p, i) => renderParticipantRow(p, completionTimes, isComplete, i))
+    .map((p, i) =>
+      renderParticipantRow(p, completionTimes, isComplete, wordCount, i)
+    )
     .join("\n");
 }
