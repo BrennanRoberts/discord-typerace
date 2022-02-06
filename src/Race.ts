@@ -194,7 +194,7 @@ export default class Race {
       this.participants.map((p) => this.sendCountdownMessage(p))
     );
     this.remainingRaceCountdownTicks--;
-    this.setTimeout(this.nextTickAction.bind(this), RACE_COUNTDOWN_INTERVAL);
+    setTimeout(this.nextTickAction.bind(this), RACE_COUNTDOWN_INTERVAL);
   }
 
   get nextTickAction() {
@@ -241,15 +241,22 @@ export default class Race {
 
   async consumeButtonInteraction(interaction: ButtonInteraction) {
     if (interaction.customId === "JOIN_RACE") {
-      await this.addParticipant(interaction.user);
+      await this.addParticipant(interaction);
     }
   }
 
-  async addParticipant(participant: User) {
+  async addParticipant(interaction: ButtonInteraction) {
+    const participant = interaction.user;
     if (this.participants.includes(participant)) return;
 
     this.participants.push(participant);
     participant.send({ content: "Race joined, prepare to type." });
+
+    // Every interaction needs some sort of response or it will show an
+    // "Interaction Failed" error. This is a no-op to keep it happy.
+    interaction.update({});
+
+    this.render();
   }
 
   markParticipantAsComplete(participant: User) {
