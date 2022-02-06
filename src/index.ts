@@ -7,7 +7,7 @@ import {
 } from "discord.js";
 import commands from "./commands/index";
 import raceTracker from "./raceTracker";
-const { token } = require("../config.json");
+import "dotenv/config";
 
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES],
@@ -47,4 +47,4 @@ client.on("message", async (message: Message) => {
   raceTracker.consumeMessage(message);
 });
 
-client.login(token);
+client.login(process.env.TOKEN);

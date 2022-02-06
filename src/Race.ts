@@ -6,7 +6,7 @@ import {
   MessageActionRow,
   MessageButton,
 } from "discord.js";
-const quotes = require("./data/quotes.json");
+import quotes from "./data/quotes.json";
 
 const DEBUG_WAIT_TIME = 5000;
 const WAIT_TIME = 20000;
