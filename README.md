@@ -18,7 +18,8 @@ Discord bot for type racing
 
 If the bot has not been added to the server yet, create a link for the server administrator from the Discord developer portal `OAuth2 > URL Generator` page with the following permissions:
 
-- Scopes > Bot
+- Scopes > bot
+- Scopes > application.commands
 - Bot Permissions > General Permissions > Read Messages/View Channels
 - Bot Permissions > Text Permissions > Send Messages
 
