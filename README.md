@@ -4,7 +4,7 @@ Discord bot for type racing
 
 ## Dependencies
 
-- Node 16 or greater
+- Node 17.6 or greater
 - A Discord application, created from the developer portal
 
 ## Setup
@@ -24,9 +24,16 @@ If the bot has not been added to the server yet, create a link for the server ad
 
 ## NPM Scripts
 
-- **start**: Runs the development server in watch mode
+- **dev**: Runs the development server in watch mode
+- **build**: Create distribution
+- **start**: Run distribution
 - **deploy-commands**: Deploy the list of commands; only needed when changing the available commands
 
 ## Production Deployment
 
-No such thing yet.
+```
+npm install -g heroku
+heroku login
+git remote add heroku https://git.heroku.com/discrace.git
+git push heroku main
+```
