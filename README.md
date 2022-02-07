@@ -9,12 +9,12 @@ Discord bot for type racing
 
 ## Setup
 
-`npm install`, then create a `config.json` file with values:
+`npm install`, then create a `.env` file with values:
 | Key | Value |
 | ----------- | ----------- |
-| clientId | Get this from the Discord developer portal for the app, in the `Oauth2` page |
-| guildId | Turn on `Developer Mode` in your Discord app settings, right-click on the server name, select `Copy ID` |
-| token | Get this from the Discord developer portal for the app, under the `Bot` page |
+| CLIENT_ID | Get this from the Discord developer portal for the app, in the `Oauth2` page |
+| GUILD_ID | Turn on `Developer Mode` in your Discord app settings, right-click on the server name, select `Copy ID` |
+| TOKEN | Get this from the Discord developer portal for the app, under the `Bot` page |
 
 If the bot has not been added to the server yet, create a link for the server administrator from the Discord developer portal `OAuth2 > URL Generator` page with the following permissions:
 

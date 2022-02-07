@@ -7,7 +7,7 @@ import {
   MessageButton,
 } from "discord.js";
 import { Participant, CompletionTimes } from "./types";
-const quotes = require("./data/quotes.json");
+import quotes from "./data/quotes.json";
 import renderParticipantList from "./renderParticipantList";
 
 const DEBUG_WAIT_TIME = 5000;
