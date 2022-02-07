@@ -32,9 +32,4 @@ If the bot has not been added to the server yet, create a link for the server ad
 
 ## Production Deployment
 
-```
-npm install -g heroku
-heroku login
-git remote add heroku https://git.heroku.com/discrace.git
-git push heroku main
-```
+`main` branch automatically deploys to Heroku.
