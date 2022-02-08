@@ -15,6 +15,7 @@ Discord bot for type racing
 | CLIENT_ID | Get this from the Discord developer portal for the app, in the `Oauth2` page |
 | GUILD_ID | Turn on `Developer Mode` in your Discord app settings, right-click on the server name, select `Copy ID` |
 | TOKEN | Get this from the Discord developer portal for the app, under the `Bot` page |
+| HIDE_DEBUG_COMMANDS | Boolean to control whether debug commands are exposed |
 
 If the bot has not been added to the server yet, create a link for the server administrator from the Discord developer portal `OAuth2 > URL Generator` page with the following permissions:
 

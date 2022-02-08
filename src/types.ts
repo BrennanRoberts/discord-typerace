@@ -6,6 +6,7 @@ interface CommandExecuteFn {
 }
 
 export interface Command {
+  isDebug?: boolean;
   data: SlashCommandBuilder;
   execute: CommandExecuteFn;
 }

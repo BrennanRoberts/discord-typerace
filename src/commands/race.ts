@@ -6,7 +6,7 @@ import { Command } from "../types";
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName("race")
-    .setDescription("Start a type race (in dev)"),
+    .setDescription("Start a type race"),
   async execute(interaction: BaseCommandInteraction) {
     await raceTracker.createRace(interaction);
   },
