@@ -60,14 +60,7 @@ export class CountdownState extends RaceState {
 
   start() {
     const race = this.race;
-    if (race.hasNoParticipants) {
-      race.setState(AbortedState);
-      race.cleanup();
-      race.onComplete();
-      return;
-    }
-
-    race.startTime = new Date();
+    if (race.hasNoParticipants) return race.setState(AbortedState);
 
     race.setState(InProgressState);
   }

@@ -3,6 +3,7 @@ import { RaceState } from "./RaceState";
 
 export class InProgressState extends RaceState {
   onEnter(): void {
+    this.race.startTime = new Date();
     this.race.participants.forEach((p) => this.race.sendStartMessage(p));
   }
 
