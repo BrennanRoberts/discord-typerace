@@ -269,7 +269,20 @@ export default class Race {
   }
 
   async autocomplete() {
+    this.notifyUnfinishedParticipants();
     this.complete();
+  }
+
+  async notifyUnfinishedParticipants() {
+    const unfinisedParticipants = this.participants.filter((p) => {
+      return !this.completionTimes[p.id];
+    });
+
+    return Promise.all(
+      unfinisedParticipants.map((p) => {
+        p.send("❌  The race has ended.");
+      })
+    );
   }
 
   async complete() {
