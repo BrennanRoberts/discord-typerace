@@ -64,7 +64,7 @@ export default function renderParticipantList(
   completionTimes: CompletionTimes,
   isComplete: boolean = false,
   string: string = ""
-) {
+): string {
   const wordCount = Math.round(string.length / 5);
 
   const sortedParticipants = isComplete

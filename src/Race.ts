@@ -5,6 +5,7 @@ import {
   Message,
   MessageActionRow,
   MessageButton,
+  WebhookEditMessageOptions,
 } from "discord.js";
 import { Participant, CompletionTimes } from "./types";
 import quotes from "./data/quotes.json";
@@ -80,7 +81,10 @@ export default class Race {
 
     const waitTime = this.debugMode ? DEBUG_WAIT_TIME : WAIT_TIME;
     this.waitingEndTime = Date.now() + waitTime;
-    this.interaction.reply(this.renderWaiting());
+    this.interaction.reply({
+      ephemeral: this.debugMode,
+      ...this.renderWaiting(),
+    });
     this.renderInterval = setInterval(this.render.bind(this), 1000);
     setTimeout(this.start.bind(this), waitTime);
   }
@@ -106,7 +110,7 @@ export default class Race {
     }
   }
 
-  renderWaiting() {
+  renderWaiting(): WebhookEditMessageOptions {
     const buttonRow = new MessageActionRow().addComponents(
       new MessageButton()
         .setCustomId("JOIN_RACE")
@@ -123,35 +127,31 @@ export default class Race {
     return {
       content: countdown + "\n" + this.renderParticipantList(),
       components: [buttonRow],
-      ephemeral: this.debugMode,
     };
   }
 
-  renderRaceCountdown() {
+  renderRaceCountdown(): WebhookEditMessageOptions {
     return {
       content: `Race is beginning in ${this.remainingRaceCountdownTicks} seconds...`,
       components: [],
-      ephemeral: this.debugMode,
     };
   }
 
-  renderInProgress() {
+  renderInProgress(): WebhookEditMessageOptions {
     return {
       content: "Race in progress\n" + this.renderParticipantList(),
       components: [],
-      ephemeral: this.debugMode,
     };
   }
 
-  renderComplete() {
+  renderComplete(): WebhookEditMessageOptions {
     return {
       content: "```" + this.string + "```\n" + this.renderParticipantList(),
       components: [],
-      ephemeral: this.debugMode,
     };
   }
 
-  renderParticipantList() {
+  renderParticipantList(): string {
     return renderParticipantList(
       <Participant[]>this.participants,
       this.completionTimes,
