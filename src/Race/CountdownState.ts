@@ -10,8 +10,16 @@ import { RaceState } from "./RaceState";
 import { AbortedState } from "./AbortedState";
 import { InProgressState } from "./InProgressState";
 
+const STARTING_RACE_COUNTDOWN_TICKS = 20;
+const DEBUG_STARTING_RACE_COUNTDOWN_TICKS = 5;
+const STARTING_RACE_COUNTDOWN_BROADCAST_THRESHOLD = 5;
+
 export class CountdownState extends RaceState {
+  remainingTicks: number = 0;
   onEnter(): void {
+    this.remainingTicks = this.race.debugMode
+      ? DEBUG_STARTING_RACE_COUNTDOWN_TICKS
+      : STARTING_RACE_COUNTDOWN_TICKS;
     this.race.interaction.reply({
       ephemeral: this.race.debugMode,
       ...this.renderPublicMessage(),
@@ -20,19 +28,19 @@ export class CountdownState extends RaceState {
 
   tick(): void {
     const race = this.race;
-    if (race.shouldBroadcastRaceCountdown) {
+    if (this.shouldBroadcastRaceCountdown) {
       race.participants.forEach((p) => this.sendCountdownMessage(p));
     }
 
-    race.remainingRaceCountdownTicks--;
+    this.remainingTicks--;
 
-    if (!race.hasRemainingRaceCountdownTicks) {
+    if (this.remainingTicks <= 0) {
       this.start();
     }
   }
 
   async sendCountdownMessage(participant: User) {
-    participant.send(this.race.remainingRaceCountdownTicks + "...");
+    participant.send(this.remainingTicks + "...");
   }
 
   renderPublicMessage(): WebhookEditMessageOptions {
@@ -43,7 +51,7 @@ export class CountdownState extends RaceState {
         .setStyle("PRIMARY")
     );
 
-    const countdown = `Race starting in ${this.race.remainingRaceCountdownTicks} seconds...`;
+    const countdown = `Race starting in ${this.remainingTicks} seconds...`;
 
     return {
       content: countdown + "\n" + this.race.renderParticipantList(),
@@ -63,5 +71,9 @@ export class CountdownState extends RaceState {
     if (race.hasNoParticipants) return race.setState(AbortedState);
 
     race.setState(InProgressState);
+  }
+
+  get shouldBroadcastRaceCountdown() {
+    return this.remainingTicks <= STARTING_RACE_COUNTDOWN_BROADCAST_THRESHOLD;
   }
 }

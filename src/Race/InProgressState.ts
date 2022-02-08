@@ -1,15 +1,22 @@
 import { Message, WebhookEditMessageOptions } from "discord.js";
 import { RaceState } from "./RaceState";
 
+const AUTOCOMPLETE_TICKS = 30;
+const DEBUG_AUTOCOMPLETE_TICKS = 10;
+
 export class InProgressState extends RaceState {
+  remainingTicks: number = 0;
   onEnter(): void {
+    this.remainingTicks = this.race.debugMode
+      ? DEBUG_AUTOCOMPLETE_TICKS
+      : AUTOCOMPLETE_TICKS;
     this.race.startTime = new Date();
     this.race.participants.forEach((p) => this.race.sendStartMessage(p));
   }
 
   tick(): void {
-    this.race.remainingAutocompleteTicks--;
-    if (!this.race.hasRemainingAutocompleteTicks) {
+    this.remainingTicks--;
+    if (this.remainingTicks <= 0) {
       this.race.autocomplete();
     }
   }
@@ -20,7 +27,7 @@ export class InProgressState extends RaceState {
         "Race in progress\n" +
         this.race.renderParticipantList() +
         "\nRace ending in " +
-        this.race.remainingAutocompleteTicks +
+        this.remainingTicks +
         " seconds",
       components: [],
     };

@@ -13,13 +13,7 @@ import { InProgressState } from "./InProgressState";
 import { CompleteState } from "./CompleteState";
 import { RaceState } from "./RaceState";
 
-const STARTING_RACE_COUNTDOWN_TICKS = 20;
-const STARTING_RACE_COUNTDOWN_BROADCAST_THRESHOLD = 5;
-const AUTOCOMPLETE_TICKS = 30;
 const TICK_INTERVAL_MS = 1000;
-
-const DEBUG_STARTING_RACE_COUNTDOWN_TICKS = 5;
-const DEBUG_AUTOCOMPLETE_TICKS = 5;
 
 interface onCompleteCallback {
   (): void;
@@ -40,8 +34,6 @@ export default class Race {
   string: string;
   interaction: BaseCommandInteraction;
   participants: User[];
-  remainingRaceCountdownTicks: number;
-  remainingAutocompleteTicks: number;
   startTime: Date | null;
   completionTimes: CompletionTimes;
   onComplete: onCompleteCallback;
@@ -55,12 +47,6 @@ export default class Race {
     this.debugMode = options.debugMode || false;
     this.string = this.debugMode ? "test string" : this.selectQuote();
     this.participants = [];
-    this.remainingRaceCountdownTicks = this.debugMode
-      ? DEBUG_STARTING_RACE_COUNTDOWN_TICKS
-      : STARTING_RACE_COUNTDOWN_TICKS;
-    this.remainingAutocompleteTicks = this.debugMode
-      ? DEBUG_STARTING_RACE_COUNTDOWN_TICKS + DEBUG_AUTOCOMPLETE_TICKS
-      : STARTING_RACE_COUNTDOWN_TICKS + AUTOCOMPLETE_TICKS;
     this.startTime = null;
     this.completionTimes = {};
     this.tickInterval = null;
@@ -131,6 +117,7 @@ export default class Race {
     if (!this.startTime) {
       return;
     }
+    console.log(this.startTime, new Date());
     const completionTime = new Date().getTime() - this.startTime.getTime();
     this.completionTimes[participant.id] = completionTime;
   }
@@ -172,18 +159,6 @@ export default class Race {
   }
 
   // CONDITIONALS
-  get hasRemainingRaceCountdownTicks() {
-    return this.remainingRaceCountdownTicks > 0;
-  }
-  get hasRemainingAutocompleteTicks() {
-    return this.remainingAutocompleteTicks > 0;
-  }
-  get shouldBroadcastRaceCountdown() {
-    return (
-      this.remainingRaceCountdownTicks <=
-      STARTING_RACE_COUNTDOWN_BROADCAST_THRESHOLD
-    );
-  }
   get hasNoParticipants() {
     return this.participants.length === 0;
   }
