@@ -11,18 +11,19 @@ import { Participant, CompletionTimes } from "./types";
 import quotes from "./data/quotes.json";
 import renderParticipantList from "./renderParticipantList";
 
-const DEBUG_WAIT_TIME = 5000;
-const WAIT_TIME = 20000;
-const STARTING_RACE_COUNTDOWN_TICKS = 5;
-const RACE_COUNTDOWN_INTERVAL = 1000;
+const STARTING_RACE_COUNTDOWN_TICKS = 20;
+const STARTING_RACE_COUNTDOWN_BROADCAST_THRESHOLD = 5;
+const AUTOCOMPLETE_TICKS = 30;
+const TICK_INTERVAL_MS = 1000;
 
-const DEBUG_AUTOCOMPLETE_TIME = 5000;
-const AUTOCOMPLETE_TIME = 30000;
+const DEBUG_STARTING_RACE_COUNTDOWN_TICKS = 5;
+const DEBUG_AUTOCOMPLETE_TICKS = 5;
 
 enum RaceState {
   Initialized = "initialized",
   Waiting = "waiting",
   Countdown = "countdown",
+  ReadyToStart = "readytostart",
   InProgress = "inprogress",
   Complete = "complete",
   AbortedNoParticipants = "abortednoparticipants",
@@ -47,14 +48,13 @@ export default class Race {
   string: string;
   interaction: BaseCommandInteraction;
   participants: User[];
-  waitingEndTime: number | null;
   remainingRaceCountdownTicks: number;
+  remainingAutocompleteTicks: number;
   startTime: Date | null;
   completionTimes: CompletionTimes;
   onComplete: onCompleteCallback;
   debugMode: boolean;
-  autocompleteTimeout: ReturnType<typeof setTimeout> | null;
-  renderInterval: ReturnType<typeof setInterval> | null;
+  tickInterval: ReturnType<typeof setInterval> | null;
 
   constructor(options: ConstructorOptions) {
     this.state = RaceState.Initialized;
@@ -63,12 +63,15 @@ export default class Race {
     this.debugMode = options.debugMode || false;
     this.string = this.debugMode ? "test string" : this.selectQuote();
     this.participants = [];
-    this.waitingEndTime = null;
-    this.remainingRaceCountdownTicks = STARTING_RACE_COUNTDOWN_TICKS;
+    this.remainingRaceCountdownTicks = this.debugMode
+      ? DEBUG_STARTING_RACE_COUNTDOWN_TICKS
+      : STARTING_RACE_COUNTDOWN_TICKS;
+    this.remainingAutocompleteTicks = this.debugMode
+      ? DEBUG_STARTING_RACE_COUNTDOWN_TICKS + DEBUG_AUTOCOMPLETE_TICKS
+      : STARTING_RACE_COUNTDOWN_TICKS + AUTOCOMPLETE_TICKS;
     this.startTime = null;
     this.completionTimes = {};
-    this.autocompleteTimeout = null;
-    this.renderInterval = null;
+    this.tickInterval = null;
   }
 
   selectQuote() {
@@ -79,23 +82,62 @@ export default class Race {
   async gatherParticipants() {
     this.state = RaceState.Waiting;
 
-    const waitTime = this.debugMode ? DEBUG_WAIT_TIME : WAIT_TIME;
-    this.waitingEndTime = Date.now() + waitTime;
     this.interaction.reply({
       ephemeral: this.debugMode,
       ...this.renderWaiting(),
     });
-    this.renderInterval = setInterval(this.render.bind(this), 1000);
-    setTimeout(this.start.bind(this), waitTime);
+
+    this.tickInterval = setInterval(
+      await this.tick.bind(this),
+      TICK_INTERVAL_MS
+    );
   }
 
-  render() {
+  async tick() {
+    if (this.hasRemainingRaceCountdownTicks) {
+      await this.handleRaceCountdown();
+    }
+    if (this.isRaceStateReadyToStart) {
+      this.start();
+    }
+    this.renderPublicStateMessage();
+    this.handleAutocompleteTimeout();
+  }
+
+  handleAutocompleteTimeout() {
+    this.remainingAutocompleteTicks--;
+    if (!this.hasRemainingAutocompleteTicks) {
+      this.autocomplete();
+    }
+  }
+
+  async handleRaceCountdown() {
+    if (this.shouldBroadcastRaceCountdown) {
+      this.updateTickCountdownState();
+      await Promise.all(
+        this.participants.map((p) => this.sendCountdownMessage(p))
+      );
+    }
+    this.remainingRaceCountdownTicks--;
+    if (!this.hasRemainingRaceCountdownTicks) {
+      this.state = RaceState.ReadyToStart;
+    }
+  }
+
+  updateTickCountdownState() {
+    if (!this.isRaceStateCountdown) {
+      this.state = RaceState.Countdown;
+    }
+  }
+
+  renderPublicStateMessage() {
     console.log("rendering " + this.state);
     switch (this.state) {
       case RaceState.Waiting:
+      case RaceState.Countdown:
+      case RaceState.ReadyToStart:
         this.interaction.editReply(this.renderWaiting());
         break;
-      case RaceState.Countdown:
       case RaceState.InProgress:
         this.interaction.editReply(this.renderInProgress());
         break;
@@ -116,11 +158,7 @@ export default class Race {
         .setStyle("PRIMARY")
     );
 
-    const countdown = `Race starting in ${
-      this.waitingEndTime
-        ? Math.ceil((this.waitingEndTime - Date.now()) / 1000)
-        : 0
-    } seconds...`;
+    const countdown = `Race starting in ${this.remainingRaceCountdownTicks} seconds...`;
 
     return {
       content: countdown + "\n" + this.renderParticipantList(),
@@ -130,7 +168,12 @@ export default class Race {
 
   renderInProgress(): WebhookEditMessageOptions {
     return {
-      content: "Race in progress\n" + this.renderParticipantList(),
+      content:
+        "Race in progress\n" +
+        this.renderParticipantList() +
+        "\nRace ending in " +
+        this.remainingAutocompleteTicks +
+        " seconds",
       components: [],
     };
   }
@@ -160,41 +203,18 @@ export default class Race {
   }
 
   async start() {
-    if (this.participants.length === 0) {
+    if (this.hasNoParticipants) {
       this.state = RaceState.AbortedNoParticipants;
       this.cleanup();
       this.onComplete();
       return;
     }
 
-    this.startRaceCountdown();
-  }
-
-  async startRaceCountdown() {
-    await this.tickRaceCountdown();
-    this.state = RaceState.Countdown;
-  }
-
-  async tickRaceCountdown() {
-    await Promise.all(
-      this.participants.map((p) => this.sendCountdownMessage(p))
-    );
-    this.remainingRaceCountdownTicks--;
-    setTimeout(this.nextTickAction.bind(this), RACE_COUNTDOWN_INTERVAL);
-  }
-
-  get nextTickAction() {
-    return this.remainingRaceCountdownTicks
-      ? this.tickRaceCountdown
-      : this.startRace;
+    this.startRace();
   }
 
   async startRace() {
     this.startTime = new Date();
-    this.autocompleteTimeout = setTimeout(
-      this.autocomplete.bind(this),
-      this.debugMode ? DEBUG_AUTOCOMPLETE_TIME : AUTOCOMPLETE_TIME
-    );
 
     await Promise.all(this.participants.map((p) => this.sendStartMessage(p)));
     this.state = RaceState.InProgress;
@@ -205,16 +225,17 @@ export default class Race {
   }
 
   async sendStartMessage(participant: User) {
-    participant.send("Go! \n```" + this.string + "```");
+    participant.send("Go! \n```" + this.string.replace(/ /g, "\u2002") + "```");
   }
 
   async consumeMessage(message: Message) {
-    if (this.state !== RaceState.InProgress) {
+    if (!this.isRaceStateInProgress) {
       await message.author.send("Race isn't active.");
       return;
     }
 
-    if (message.content !== this.string) {
+    let inputText = message.content;
+    if (!this.isInputTextAccurate(inputText)) {
       await message.author.send("Oops, something wasn't quite right.");
       return;
     }
@@ -226,14 +247,15 @@ export default class Race {
   }
 
   async consumeButtonInteraction(interaction: ButtonInteraction) {
-    if (interaction.customId === "JOIN_RACE") {
+    let buttonId = interaction.customId;
+    if (this.isJoinRaceButton(buttonId)) {
       await this.addParticipant(interaction);
     }
   }
 
   async addParticipant(interaction: ButtonInteraction) {
     const participant = interaction.user;
-    if (this.participants.includes(participant)) return;
+    if (this.hasParticipant(participant)) return;
 
     this.participants.push(participant);
     participant.send({ content: "Race joined, prepare to type." });
@@ -242,7 +264,7 @@ export default class Race {
     // "Interaction Failed" error. This is a no-op to keep it happy.
     interaction.update({});
 
-    this.render();
+    this.renderPublicStateMessage();
   }
 
   markParticipantAsComplete(participant: User) {
@@ -254,7 +276,7 @@ export default class Race {
   }
 
   async checkCompletion() {
-    if (Object.keys(this.completionTimes).length >= this.participants.length) {
+    if (this.allParticipantsAreFinished) {
       this.complete();
     }
   }
@@ -277,18 +299,53 @@ export default class Race {
   }
 
   async complete() {
-    if (this.autocompleteTimeout) {
-      clearTimeout(this.autocompleteTimeout);
-    }
     this.state = RaceState.Complete;
     this.onComplete();
     this.cleanup();
   }
 
   cleanup() {
-    this.render();
-    if (this.renderInterval) {
-      clearTimeout(this.renderInterval);
+    this.renderPublicStateMessage();
+    if (this.tickInterval) {
+      clearInterval(this.tickInterval);
     }
+  }
+
+  // CONDITIONALS
+  get hasRemainingRaceCountdownTicks() {
+    return this.remainingRaceCountdownTicks > 0;
+  }
+  get isRaceStateReadyToStart() {
+    return this.state === RaceState.ReadyToStart;
+  }
+  get hasRemainingAutocompleteTicks() {
+    return this.remainingAutocompleteTicks > 0;
+  }
+  get shouldBroadcastRaceCountdown() {
+    return (
+      this.remainingRaceCountdownTicks <=
+      STARTING_RACE_COUNTDOWN_BROADCAST_THRESHOLD
+    );
+  }
+  get isRaceStateCountdown() {
+    return this.state === RaceState.Countdown;
+  }
+  get hasNoParticipants() {
+    return this.participants.length === 0;
+  }
+  get isRaceStateInProgress() {
+    return this.state === RaceState.InProgress;
+  }
+  isInputTextAccurate(messageContent: string) {
+    return messageContent === this.string;
+  }
+  isJoinRaceButton(interactionId: string) {
+    return interactionId === "JOIN_RACE";
+  }
+  hasParticipant(participant: User) {
+    return this.participants.includes(participant);
+  }
+  get allParticipantsAreFinished() {
+    return Object.keys(this.completionTimes).length >= this.participants.length;
   }
 }
