@@ -21,7 +21,6 @@ const DEBUG_AUTOCOMPLETE_TICKS = 5;
 
 enum RaceState {
   Initialized = "initialized",
-  Waiting = "waiting",
   Countdown = "countdown",
   ReadyToStart = "readytostart",
   InProgress = "inprogress",
@@ -80,11 +79,11 @@ export default class Race {
   }
 
   async gatherParticipants() {
-    this.state = RaceState.Waiting;
+    this.state = RaceState.Countdown;
 
     this.interaction.reply({
       ephemeral: this.debugMode,
-      ...this.renderWaiting(),
+      ...this.renderCountdown(),
     });
 
     this.tickInterval = setInterval(
@@ -113,7 +112,6 @@ export default class Race {
 
   async handleRaceCountdown() {
     if (this.shouldBroadcastRaceCountdown) {
-      this.updateTickCountdownState();
       await Promise.all(
         this.participants.map((p) => this.sendCountdownMessage(p))
       );
@@ -124,19 +122,12 @@ export default class Race {
     }
   }
 
-  updateTickCountdownState() {
-    if (!this.isRaceStateCountdown) {
-      this.state = RaceState.Countdown;
-    }
-  }
-
   renderPublicStateMessage() {
     console.log("rendering " + this.state);
     switch (this.state) {
-      case RaceState.Waiting:
       case RaceState.Countdown:
       case RaceState.ReadyToStart:
-        this.interaction.editReply(this.renderWaiting());
+        this.interaction.editReply(this.renderCountdown());
         break;
       case RaceState.InProgress:
         this.interaction.editReply(this.renderInProgress());
@@ -150,7 +141,7 @@ export default class Race {
     }
   }
 
-  renderWaiting(): WebhookEditMessageOptions {
+  renderCountdown(): WebhookEditMessageOptions {
     const buttonRow = new MessageActionRow().addComponents(
       new MessageButton()
         .setCustomId("JOIN_RACE")
