@@ -22,7 +22,7 @@ const AUTOCOMPLETE_TIME = 30000;
 enum RaceState {
   Initialized = "initialized",
   Waiting = "waiting",
-  RaceCountdown = "racecountdown",
+  Countdown = "countdown",
   InProgress = "inprogress",
   Complete = "complete",
   AbortedNoParticipants = "abortednoparticipants",
@@ -95,9 +95,7 @@ export default class Race {
       case RaceState.Waiting:
         this.interaction.editReply(this.renderWaiting());
         break;
-      case RaceState.RaceCountdown:
-        this.interaction.editReply(this.renderRaceCountdown());
-        break;
+      case RaceState.Countdown:
       case RaceState.InProgress:
         this.interaction.editReply(this.renderInProgress());
         break;
@@ -127,13 +125,6 @@ export default class Race {
     return {
       content: countdown + "\n" + this.renderParticipantList(),
       components: [buttonRow],
-    };
-  }
-
-  renderRaceCountdown(): WebhookEditMessageOptions {
-    return {
-      content: `Race is beginning in ${this.remainingRaceCountdownTicks} seconds...`,
-      components: [],
     };
   }
 
@@ -181,7 +172,7 @@ export default class Race {
 
   async startRaceCountdown() {
     await this.tickRaceCountdown();
-    this.state = RaceState.RaceCountdown;
+    this.state = RaceState.Countdown;
   }
 
   async tickRaceCountdown() {
