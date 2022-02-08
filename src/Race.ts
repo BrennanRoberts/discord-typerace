@@ -93,11 +93,11 @@ export default class Race {
   }
 
   async tick() {
-    if (this.hasRemainingRaceCountdownTicks) {
-      await this.handleRaceCountdown();
-    }
     if (this.isRaceStateReadyToStart) {
       this.start();
+    }
+    if (this.isRaceStateCountdown) {
+      await this.handleRaceCountdown();
     }
     this.renderPublicStateMessage();
     this.handleAutocompleteTimeout();
