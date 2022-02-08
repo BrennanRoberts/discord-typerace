@@ -4,7 +4,7 @@ Discord bot for type racing
 
 ## Dependencies
 
-- Node 17.6 or greater
+- Node 17.4 or greater
 - A Discord application, created from the developer portal
 
 ## Setup
