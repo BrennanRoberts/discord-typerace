@@ -12,7 +12,7 @@
   },
   "scripts": {
     "deploy-commands": "ts-node src/deploy-commands.ts",
-    "heroku-postbuild": "npm run deploy-commands",
+    "heroku-postbuild": "npm run deploy-commands && npm run build",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-dev src/index.ts",
