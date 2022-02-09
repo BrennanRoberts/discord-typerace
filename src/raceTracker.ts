@@ -1,5 +1,5 @@
 import { BaseCommandInteraction, Message, ButtonInteraction } from "discord.js";
-import Race from "./Race";
+import Race from "./Race/Race";
 
 class RaceTracker {
   currentRace: Race | null;
