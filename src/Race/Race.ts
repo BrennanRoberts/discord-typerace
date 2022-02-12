@@ -1,10 +1,11 @@
 import {
   BaseCommandInteraction,
   ButtonInteraction,
-  User,
+  GuildMember,
   Message,
+  User,
 } from "discord.js";
-import { Participant, CompletionTimes } from "../types";
+import { DiscracedUser, Participant, CompletionTimes } from "../types";
 import quotes from "../data/quotes.json";
 import renderParticipantList from "../renderParticipantList";
 import { InitializedState } from "./InitializedState";
@@ -33,7 +34,7 @@ export default class Race {
   state: RaceState;
   string: string;
   interaction: BaseCommandInteraction;
-  participants: User[];
+  participants: DiscracedUser[];
   startTime: Date | null;
   completionTimes: CompletionTimes;
   onComplete: onCompleteCallback;
@@ -100,7 +101,14 @@ export default class Race {
   }
 
   async addParticipant(interaction: ButtonInteraction) {
-    const participant = interaction.user;
+    const { member, user } = interaction
+    const participant = user as DiscracedUser;
+    participant.renderName = user.username;
+
+    if (member instanceof GuildMember && member.nickname) {
+      participant.renderName = member.nickname;
+    }
+
     if (this.hasParticipant(participant)) return;
 
     this.participants.push(participant);
@@ -172,7 +180,7 @@ export default class Race {
     return interactionId === "JOIN_RACE";
   }
   hasParticipant(participant: User) {
-    return this.participants.includes(participant);
+    return this.participants.find((p) => p.id == participant.id);
   }
   get allParticipantsAreFinished() {
     return Object.keys(this.completionTimes).length >= this.participants.length;
