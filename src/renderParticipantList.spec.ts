@@ -8,13 +8,13 @@ describe("renderParticipantList", function () {
 
     test("single entry, incomplete", () => {
       expect(
-        renderParticipantList([{ id: "1", username: "asdf" }], {})
+        renderParticipantList([{ id: "1", renderName: "asdf" }], {})
       ).toEqual("🏎  asdf");
     });
 
     test("single entry, complete", () => {
       expect(
-        renderParticipantList([{ id: "1", username: "asdf" }], { 1: 1000 })
+        renderParticipantList([{ id: "1", renderName: "asdf" }], { 1: 1000 })
       ).toEqual("🏁  asdf");
     });
 
@@ -22,8 +22,8 @@ describe("renderParticipantList", function () {
       expect(
         renderParticipantList(
           [
-            { id: "1", username: "asdf" },
-            { id: "2", username: "fdsa" },
+            { id: "1", renderName: "asdf" },
+            { id: "2", renderName: "fdsa" },
           ],
           { 1: 1000 }
         )
@@ -34,8 +34,8 @@ describe("renderParticipantList", function () {
       expect(
         renderParticipantList(
           [
-            { id: "1", username: "asdf" },
-            { id: "2", username: "fdsa" },
+            { id: "1", renderName: "asdf" },
+            { id: "2", renderName: "fdsa" },
           ],
           { 1: 1000, 2: 1200 }
         )
@@ -45,7 +45,7 @@ describe("renderParticipantList", function () {
   describe("complete", function () {
     test("single entry, incomplete", () => {
       expect(
-        renderParticipantList([{ id: "1", username: "asdf" }], {}, true)
+        renderParticipantList([{ id: "1", renderName: "asdf" }], {}, true)
       ).toEqual("❌  asdf");
     });
 
@@ -53,11 +53,11 @@ describe("renderParticipantList", function () {
       expect(
         renderParticipantList(
           [
-            { id: "no2", username: "no2" },
-            { id: "no5", username: "no5" },
-            { id: "no3", username: "no3" },
-            { id: "no1", username: "no1" },
-            { id: "no4", username: "no4" },
+            { id: "no2", renderName: "no2" },
+            { id: "no5", renderName: "no5" },
+            { id: "no3", renderName: "no3" },
+            { id: "no1", renderName: "no1" },
+            { id: "no4", renderName: "no4" },
           ],
           {
             no2: 2000,
