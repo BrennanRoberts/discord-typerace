@@ -1,4 +1,4 @@
-import { BaseCommandInteraction, User } from "discord.js";
+import { BaseCommandInteraction } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
 
 interface CommandExecuteFn {
@@ -13,11 +13,9 @@ export interface Command {
 
 export interface Participant {
   id: string;
-  renderName: string;
+  username: string;
 }
 
 export interface CompletionTimes {
   [id: string]: number;
 }
-
-export type DiscracedUser = User & { renderName: string }

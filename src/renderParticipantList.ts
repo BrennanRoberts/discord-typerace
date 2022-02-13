@@ -1,3 +1,5 @@
+import { memberNicknameMention } from "@discordjs/builders";
+import { User } from "discord.js";
 import { Participant, CompletionTimes } from "./types";
 
 function renderParticipantRow(
@@ -18,7 +20,7 @@ function renderParticipantRow(
     return ` - ${time} seconds (${wpm} WPM)`;
   };
 
-  return `${icon}  ${participant.renderName}${completionInfo()}`;
+  return `${icon}  <@!${participant.id}>${completionInfo()}`;
 }
 
 function getIcon(isComplete: boolean, hasFinished: boolean, placement: number) {
