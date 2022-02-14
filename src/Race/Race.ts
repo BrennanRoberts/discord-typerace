@@ -12,6 +12,7 @@ import { CountdownState } from "./CountdownState";
 import { InProgressState } from "./InProgressState";
 import { CompleteState } from "./CompleteState";
 import { RaceState } from "./RaceState";
+import UserResults from "../models/Users";
 
 const TICK_INTERVAL_MS = 1000;
 
@@ -154,8 +155,13 @@ export default class Race {
 
   async complete() {
     this.setState(CompleteState);
+    this.saveResults();
     this.onComplete();
     this.cleanup();
+  }
+
+  saveResults() {
+    UserResults.save(this.participants[0].id, 10, 0);
   }
 
   cleanup() {
